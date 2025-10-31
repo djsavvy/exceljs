@@ -523,7 +523,7 @@ class HyperlinkValue {
   get tooltip() {
     return this.model.tooltip;
   }
-    set tooltip(value) {
+   set tooltip(value) {
     this.model.tooltip = value;
   } */
 
@@ -617,14 +617,21 @@ class FormulaValue {
       ref: value ? value.ref : undefined,
       formula: value ? value.formula : undefined,
       sharedFormula: value ? value.sharedFormula : undefined,
-      result: value ? value.result : undefined
+      result: value ? value.result : undefined,
+      // Data table attributes
+      r1: value ? value.r1 : undefined,
+      r2: value ? value.r2 : undefined,
+      dt2D: value ? value.dt2D : undefined,
+      dtr: value ? value.dtr : undefined,
+      del: value ? value.del : undefined,
+      ca: value ? value.ca : undefined
     };
   }
   _copyModel(model) {
     const copy = {};
     const cp = name => {
       const value = model[name];
-      if (value) {
+      if (value !== undefined) {
         copy[name] = value;
       }
     };
@@ -633,6 +640,13 @@ class FormulaValue {
     cp('ref');
     cp('shareType');
     cp('sharedFormula');
+    // Data table attributes
+    cp('r1');
+    cp('r2');
+    cp('dt2D');
+    cp('dtr');
+    cp('del');
+    cp('ca');
     return copy;
   }
   get value() {

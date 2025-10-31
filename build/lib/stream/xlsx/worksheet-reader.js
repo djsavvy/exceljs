@@ -297,7 +297,14 @@ class WorksheetReader extends EventEmitter {
                           text: '',
                           si: node.attributes.si,
                           t: node.attributes.t,
-                          ref: node.attributes.ref
+                          ref: node.attributes.ref,
+                          // Data Table attributes
+                          r1: node.attributes.r1,
+                          r2: node.attributes.r2,
+                          dt2D: node.attributes.dt2D,
+                          dtr: node.attributes.dtr,
+                          del: node.attributes.del,
+                          ca: node.attributes.ca
                         };
                       }
                       break;
@@ -414,6 +421,25 @@ class WorksheetReader extends EventEmitter {
                             }
                             if (formulaText) {
                               cellValue.formula = formulaText;
+                            }
+                            // Data table specific attributes
+                            if (c.f.r1) {
+                              cellValue.r1 = c.f.r1;
+                            }
+                            if (c.f.r2) {
+                              cellValue.r2 = c.f.r2;
+                            }
+                            if (c.f.dt2D) {
+                              cellValue.dt2D = c.f.dt2D;
+                            }
+                            if (c.f.dtr !== undefined) {
+                              cellValue.dtr = c.f.dtr;
+                            }
+                            if (c.f.del !== undefined) {
+                              cellValue.del = c.f.del;
+                            }
+                            if (c.f.ca !== undefined) {
+                              cellValue.ca = c.f.ca;
                             }
                           } else if (c.f.t === 'array') {
                             // Handle array formulas - preserve metadata

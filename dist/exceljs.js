@@ -781,7 +781,7 @@ class HyperlinkValue {
   get tooltip() {
     return this.model.tooltip;
   }
-    set tooltip(value) {
+   set tooltip(value) {
     this.model.tooltip = value;
   } */
 
@@ -875,14 +875,21 @@ class FormulaValue {
       ref: value ? value.ref : undefined,
       formula: value ? value.formula : undefined,
       sharedFormula: value ? value.sharedFormula : undefined,
-      result: value ? value.result : undefined
+      result: value ? value.result : undefined,
+      // Data table attributes
+      r1: value ? value.r1 : undefined,
+      r2: value ? value.r2 : undefined,
+      dt2D: value ? value.dt2D : undefined,
+      dtr: value ? value.dtr : undefined,
+      del: value ? value.del : undefined,
+      ca: value ? value.ca : undefined
     };
   }
   _copyModel(model) {
     const copy = {};
     const cp = name => {
       const value = model[name];
-      if (value) {
+      if (value !== undefined) {
         copy[name] = value;
       }
     };
@@ -891,6 +898,13 @@ class FormulaValue {
     cp('ref');
     cp('shareType');
     cp('sharedFormula');
+    // Data table attributes
+    cp('r1');
+    cp('r2');
+    cp('dt2D');
+    cp('dtr');
+    cp('del');
+    cp('ca');
     return copy;
   }
   get value() {
@@ -9537,6 +9551,19 @@ class CellXform extends BaseXform {
           ref: model.ref
         };
         break;
+      case 'dataTable':
+        attrs = {
+          t: 'dataTable',
+          ref: model.ref
+        };
+        // Add data table specific attributes
+        if (model.r1) attrs.r1 = model.r1;
+        if (model.r2) attrs.r2 = model.r2;
+        if (model.dt2D) attrs.dt2D = model.dt2D;
+        if (model.dtr !== undefined) attrs.dtr = model.dtr;
+        if (model.del !== undefined) attrs.del = model.del;
+        if (model.ca !== undefined) attrs.ca = model.ca;
+        break;
       default:
         if (model.si !== undefined) {
           attrs = {
@@ -9667,6 +9694,13 @@ class CellXform extends BaseXform {
         this.model.si = node.attributes.si;
         this.model.shareType = node.attributes.t;
         this.model.ref = node.attributes.ref;
+        // Data table attributes
+        if (node.attributes.r1) this.model.r1 = node.attributes.r1;
+        if (node.attributes.r2) this.model.r2 = node.attributes.r2;
+        if (node.attributes.dt2D) this.model.dt2D = node.attributes.dt2D;
+        if (node.attributes.dtr !== undefined) this.model.dtr = node.attributes.dtr;
+        if (node.attributes.del !== undefined) this.model.del = node.attributes.del;
+        if (node.attributes.ca !== undefined) this.model.ca = node.attributes.ca;
         return true;
       case 'v':
         this.currentNode = 'v';
@@ -9764,6 +9798,13 @@ class CellXform extends BaseXform {
           return false;
         }
       case 'f':
+        // Ensure formula is at least an empty string for data tables and array formulas
+        // But NOT for shared formula slave cells (they should not have formula property)
+        if (this.model.formula === undefined && (this.model.shareType === 'dataTable' || this.model.shareType === 'array')) {
+          this.model.formula = '';
+        }
+        this.currentNode = undefined;
+        return true;
       case 'v':
       case 'is':
         this.currentNode = undefined;
