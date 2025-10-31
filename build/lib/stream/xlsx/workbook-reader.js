@@ -435,23 +435,37 @@ class WorkbookReader extends EventEmitter {
       };
     }
   }
-  *_parseHyperlinks(iterator, sheetNo) {
-    this._emitEntry({
-      type: 'hyperlinks',
-      id: sheetNo
-    });
-    const hyperlinksReader = new HyperlinkReader({
-      workbook: this,
-      id: sheetNo,
-      iterator,
-      options: this.options
-    });
-    if (this.options.hyperlinks === 'emit') {
-      yield {
-        eventType: 'hyperlinks',
-        value: hyperlinksReader
-      };
-    }
+  _parseHyperlinks(iterator, sheetNo) {
+    var _this4 = this;
+    return _wrapAsyncGenerator(function* () {
+      _this4._emitEntry({
+        type: 'hyperlinks',
+        id: sheetNo
+      });
+      const hyperlinksReader = new HyperlinkReader({
+        workbook: _this4,
+        id: sheetNo,
+        iterator,
+        options: _this4.options
+      });
+
+      // Read the hyperlinks first to populate the relationships
+      yield _awaitAsyncGenerator(hyperlinksReader.read());
+
+      // Store hyperlink relationships by sheet number for worksheet reader to access
+      if (hyperlinksReader.hyperlinks && Object.keys(hyperlinksReader.hyperlinks).length > 0) {
+        if (!_this4.hyperlinkRelationships) {
+          _this4.hyperlinkRelationships = {};
+        }
+        _this4.hyperlinkRelationships[sheetNo] = hyperlinksReader.hyperlinks;
+      }
+      if (_this4.options.hyperlinks === 'emit') {
+        yield {
+          eventType: 'hyperlinks',
+          value: hyperlinksReader
+        };
+      }
+    })();
   }
 }
 
