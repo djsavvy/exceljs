@@ -26,28 +26,28 @@ describe('github issues', () => {
             const cellE5 = ws.getCell('E5');
             expect(cellE5.type).to.equal(Enums.ValueType.Formula);
             expect(cellE5.value.shareType).to.equal('dataTable');
+            expect(cellE5.value.ref).to.equal('D5:E6'); // All cells have ref
             expect(cellE5.value.r1).to.be.ok();
             expect(cellE5.value.r2).to.be.ok();
             expect(cellE5.value.dt2D).to.be.ok();
-            expect(cellE5.value.ref).to.not.be.ok(); // Only master has ref
             expect(cellE5.value.result).to.equal('sbsb'); // Cached value preserved
 
             const cellD6 = ws.getCell('D6');
             expect(cellD6.type).to.equal(Enums.ValueType.Formula);
             expect(cellD6.value.shareType).to.equal('dataTable');
+            expect(cellD6.value.ref).to.equal('D5:E6'); // All cells have ref
             expect(cellD6.value.r1).to.be.ok();
             expect(cellD6.value.r2).to.be.ok();
             expect(cellD6.value.dt2D).to.be.ok();
-            expect(cellD6.value.ref).to.not.be.ok(); // Only master has ref
             expect(cellD6.value.result).to.equal('ablabl'); // Cached value preserved
 
             const cellE6 = ws.getCell('E6');
             expect(cellE6.type).to.equal(Enums.ValueType.Formula);
             expect(cellE6.value.shareType).to.equal('dataTable');
+            expect(cellE6.value.ref).to.equal('D5:E6'); // All cells have ref
             expect(cellE6.value.r1).to.be.ok();
             expect(cellE6.value.r2).to.be.ok();
             expect(cellE6.value.dt2D).to.be.ok();
-            expect(cellE6.value.ref).to.not.be.ok(); // Only master has ref
             expect(cellE6.value.result).to.equal('sblsbl'); // Cached value preserved
 
             // Check the formula cell C4

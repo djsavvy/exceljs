@@ -13093,6 +13093,7 @@ class WorkSheetXform extends BaseXform {
             masterAddress: cell.address,
             attributes: {
               shareType: 'dataTable',
+              ref: cell.ref,
               r1: cell.r1,
               r2: cell.r2,
               dt2D: cell.dt2D,
