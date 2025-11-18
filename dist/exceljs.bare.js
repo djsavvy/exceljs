@@ -13056,6 +13056,73 @@ class WorkSheetXform extends BaseXform {
         return true;
     }
   }
+  _reconcileDataTables(rows) {
+    // Find all data table master cells and propagate attributes to all cells in their ranges
+    const dataTables = [];
+
+    // First pass: find all data table master cells
+    rows.forEach(row => {
+      row.cells.forEach(cell => {
+        if (cell.shareType === 'dataTable' && cell.ref) {
+          // This is a data table master cell
+          const range = colCache.decode(cell.ref);
+          dataTables.push({
+            range,
+            masterAddress: cell.address,
+            attributes: {
+              shareType: 'dataTable',
+              r1: cell.r1,
+              r2: cell.r2,
+              dt2D: cell.dt2D,
+              dtr: cell.dtr,
+              del: cell.del,
+              ca: cell.ca
+            }
+          });
+        }
+      });
+    });
+
+    // Second pass: propagate attributes to all cells in data table ranges
+    if (dataTables.length > 0) {
+      const Enums = require('../../../doc/enums');
+      rows.forEach(row => {
+        row.cells.forEach(cell => {
+          // Check if this cell is in any data table range
+          dataTables.forEach(dataTable => {
+            const {
+              range,
+              masterAddress,
+              attributes
+            } = dataTable;
+            const cellAddr = colCache.decodeAddress(cell.address);
+
+            // Check if cell is in the range
+            if (cellAddr.row >= range.top && cellAddr.row <= range.bottom && cellAddr.col >= range.left && cellAddr.col <= range.right) {
+              // Don't overwrite the master cell, it already has everything
+              if (cell.address !== masterAddress) {
+                // Convert cell to formula type
+                const existingValue = cell.value;
+                cell.type = Enums.ValueType.Formula;
+                cell.formula = '';
+                cell.result = existingValue;
+
+                // Add data table attributes
+                Object.keys(attributes).forEach(key => {
+                  if (attributes[key] !== undefined) {
+                    cell[key] = attributes[key];
+                  }
+                });
+
+                // Remove the old value property since it's now in result
+                cell.value = undefined;
+              }
+            }
+          });
+        });
+      });
+    }
+  }
   reconcile(model, options) {
     // options.merges = new Merges();
     // options.merges.reconcile(model.mergeCells, model.rows);
@@ -13094,6 +13161,9 @@ class WorkSheetXform extends BaseXform {
     this.map.cols.reconcile(model.cols, options);
     this.map.sheetData.reconcile(model.rows, options);
     this.map.conditionalFormatting.reconcile(model.conditionalFormattings, options);
+
+    // Propagate data table attributes to all cells in the data table range
+    this._reconcileDataTables(model.rows);
     model.media = [];
     if (model.drawing) {
       const drawingRel = rels[model.drawing.rId];
@@ -13143,7 +13213,7 @@ WorkSheetXform.WORKSHEET_ATTRIBUTES = {
 };
 module.exports = WorkSheetXform;
 
-},{"../../../utils/col-cache":20,"../../../utils/under-dash":27,"../../../utils/xml-stream":29,"../../rel-type":32,"../base-xform":33,"../list-xform":73,"./auto-filter-xform":78,"./cf/conditional-formattings-xform":93,"./col-xform":98,"./data-validations-xform":99,"./dimension-xform":100,"./drawing-xform":101,"./ext-lst-xform":102,"./header-footer-xform":103,"./hyperlink-xform":104,"./merge-cell-xform":105,"./merges":106,"./page-margins-xform":109,"./page-setup-xform":111,"./picture-xform":112,"./print-options-xform":113,"./row-breaks-xform":114,"./row-xform":115,"./sheet-format-properties-xform":116,"./sheet-properties-xform":117,"./sheet-protection-xform":118,"./sheet-view-xform":119,"./table-part-xform":120}],122:[function(require,module,exports){
+},{"../../../doc/enums":7,"../../../utils/col-cache":20,"../../../utils/under-dash":27,"../../../utils/xml-stream":29,"../../rel-type":32,"../base-xform":33,"../list-xform":73,"./auto-filter-xform":78,"./cf/conditional-formattings-xform":93,"./col-xform":98,"./data-validations-xform":99,"./dimension-xform":100,"./drawing-xform":101,"./ext-lst-xform":102,"./header-footer-xform":103,"./hyperlink-xform":104,"./merge-cell-xform":105,"./merges":106,"./page-margins-xform":109,"./page-setup-xform":111,"./picture-xform":112,"./print-options-xform":113,"./row-breaks-xform":114,"./row-xform":115,"./sheet-format-properties-xform":116,"./sheet-properties-xform":117,"./sheet-protection-xform":118,"./sheet-view-xform":119,"./table-part-xform":120}],122:[function(require,module,exports){
 "use strict";
 
 const BaseXform = require('../base-xform');

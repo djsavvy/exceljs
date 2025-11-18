@@ -433,6 +433,73 @@ class WorkSheetXform extends BaseXform {
         return true;
     }
   }
+  _reconcileDataTables(rows) {
+    // Find all data table master cells and propagate attributes to all cells in their ranges
+    const dataTables = [];
+
+    // First pass: find all data table master cells
+    rows.forEach(row => {
+      row.cells.forEach(cell => {
+        if (cell.shareType === 'dataTable' && cell.ref) {
+          // This is a data table master cell
+          const range = colCache.decode(cell.ref);
+          dataTables.push({
+            range,
+            masterAddress: cell.address,
+            attributes: {
+              shareType: 'dataTable',
+              r1: cell.r1,
+              r2: cell.r2,
+              dt2D: cell.dt2D,
+              dtr: cell.dtr,
+              del: cell.del,
+              ca: cell.ca
+            }
+          });
+        }
+      });
+    });
+
+    // Second pass: propagate attributes to all cells in data table ranges
+    if (dataTables.length > 0) {
+      const Enums = require('../../../doc/enums');
+      rows.forEach(row => {
+        row.cells.forEach(cell => {
+          // Check if this cell is in any data table range
+          dataTables.forEach(dataTable => {
+            const {
+              range,
+              masterAddress,
+              attributes
+            } = dataTable;
+            const cellAddr = colCache.decodeAddress(cell.address);
+
+            // Check if cell is in the range
+            if (cellAddr.row >= range.top && cellAddr.row <= range.bottom && cellAddr.col >= range.left && cellAddr.col <= range.right) {
+              // Don't overwrite the master cell, it already has everything
+              if (cell.address !== masterAddress) {
+                // Convert cell to formula type
+                const existingValue = cell.value;
+                cell.type = Enums.ValueType.Formula;
+                cell.formula = '';
+                cell.result = existingValue;
+
+                // Add data table attributes
+                Object.keys(attributes).forEach(key => {
+                  if (attributes[key] !== undefined) {
+                    cell[key] = attributes[key];
+                  }
+                });
+
+                // Remove the old value property since it's now in result
+                cell.value = undefined;
+              }
+            }
+          });
+        });
+      });
+    }
+  }
   reconcile(model, options) {
     // options.merges = new Merges();
     // options.merges.reconcile(model.mergeCells, model.rows);
@@ -471,6 +538,9 @@ class WorkSheetXform extends BaseXform {
     this.map.cols.reconcile(model.cols, options);
     this.map.sheetData.reconcile(model.rows, options);
     this.map.conditionalFormatting.reconcile(model.conditionalFormattings, options);
+
+    // Propagate data table attributes to all cells in the data table range
+    this._reconcileDataTables(model.rows);
     model.media = [];
     if (model.drawing) {
       const drawingRel = rels[model.drawing.rId];

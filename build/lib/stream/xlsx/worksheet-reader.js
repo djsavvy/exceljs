@@ -49,6 +49,9 @@ class WorksheetReader extends EventEmitter {
 
     // hyperlink relationship tracking
     this._hyperlinkRels = null;
+
+    // data table tracking
+    this._dataTables = [];
   }
 
   // destroy - not a valid operation for a streaming writer
@@ -418,6 +421,22 @@ class WorksheetReader extends EventEmitter {
                             cellValue.shareType = 'dataTable';
                             if (c.f.ref) {
                               cellValue.ref = c.f.ref;
+
+                              // Track this data table range for applying attributes to other cells
+                              const range = colCache.decode(c.f.ref);
+                              _this2._dataTables.push({
+                                range,
+                                masterAddress: c.ref,
+                                attributes: {
+                                  shareType: 'dataTable',
+                                  r1: c.f.r1,
+                                  r2: c.f.r2,
+                                  dt2D: c.f.dt2D,
+                                  dtr: c.f.dtr,
+                                  del: c.f.del,
+                                  ca: c.f.ca
+                                }
+                              });
                             }
                             if (formulaText) {
                               cellValue.formula = formulaText;
@@ -510,6 +529,37 @@ class WorksheetReader extends EventEmitter {
                             } else {
                               // Fallback to hyperlink object if we can't resolve
                               cell.hyperlink = hyperlink;
+                            }
+                          }
+                        }
+
+                        // Check if this cell is in any data table range
+                        if (_this2._dataTables.length > 0) {
+                          const cellAddr = colCache.decodeAddress(c.ref);
+                          for (const dataTable of _this2._dataTables) {
+                            const {
+                              range,
+                              masterAddress,
+                              attributes
+                            } = dataTable;
+                            // Check if cell is in the range
+                            if (cellAddr.row >= range.top && cellAddr.row <= range.bottom && cellAddr.col >= range.left && cellAddr.col <= range.right && c.ref !== masterAddress // Don't overwrite master cell
+                            ) {
+                              // Convert cell value to formula type with data table attributes
+                              const existingValue = cell.value;
+                              cell.value = {
+                                formula: '',
+                                result: existingValue,
+                                shareType: attributes.shareType
+                              };
+                              // Add data table specific attributes
+                              if (attributes.r1) cell.value.r1 = attributes.r1;
+                              if (attributes.r2) cell.value.r2 = attributes.r2;
+                              if (attributes.dt2D) cell.value.dt2D = attributes.dt2D;
+                              if (attributes.dtr !== undefined) cell.value.dtr = attributes.dtr;
+                              if (attributes.del !== undefined) cell.value.del = attributes.del;
+                              if (attributes.ca !== undefined) cell.value.ca = attributes.ca;
+                              break; // Only apply first matching data table
                             }
                           }
                         }
